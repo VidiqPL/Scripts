@@ -21,6 +21,10 @@ local PlayerListSection = PlayerListTab:NewSection("Player List Controls")
 local NotifierTab = Window:NewTab("Notifier")
 local NotifierSection = NotifierTab:NewSection("Robbery Notifications")
 
+-- Teleport Tab and Section
+local TeleportTab = Window:NewTab("Teleports")
+local TeleportSection = TeleportTab:NewSection("Teleport Section")
+
 -- ESP Toggle State
 getgenv().ESPEnabled = false
 getgenv().PlayerListVisible = true -- State for player list visibility
@@ -208,38 +212,71 @@ game.Players.PlayerRemoving:Connect(updatePlayerList)
 
 -- Player List Toggle
 PlayerListSection:NewToggle("Show Player List", "Toggles the player list visibility", function(state)
-    getgenv().PlayerListVisible = state
     PlayerList.Enabled = state
 end)
 
--- Robbery Notifications Toggle
-NotifierSection:NewToggle("Enable Notifications", "Toggle this to enable notifications when an object spawns", function(state)
-    if state then
-        -- Enable the notification feature
-        game:GetService("Workspace").BrinksRobbery.ChildAdded:Connect(function(child)
-            -- Create a custom notification
-            local screenGui = Instance.new("ScreenGui")
-            local notification = Instance.new("TextLabel")
-            notification.Parent = screenGui
-            screenGui.Parent = game.Players.LocalPlayer.PlayerGui
-
-            -- Set up the notification appearance
-            notification.Size = UDim2.new(0.5, 0, 0.1, 0)
-            notification.Position = UDim2.new(0.25, 0, 0.8, 0)
-            notification.BackgroundTransparency = 1 -- Remove the black background
-            notification.TextColor3 = Color3.fromRGB(255, 0, 0) -- Text color (red)
-            notification.TextSize = 24
-            notification.Text = "Truck has spawned, go rob it!"
-            notification.TextWrapped = true
-            notification.TextStrokeTransparency = 0.8
-            notification.TextStrokeColor3 = Color3.fromRGB(255, 255, 255) -- White text stroke for better readability
-
-            -- Show the notification for 5 seconds
-            wait(5)
-            screenGui:Destroy()
-        end)
-    else
-        -- Disable notifications
-        print("Notifications disabled")
-    end
+-- Robbery Notification
+NotifierSection:NewToggle("Robbery Notifications", "Toggles robbery notifications", function(state)
+    getgenv().NotifierEnabled = state
 end)
+
+-- Teleport Tab and Section
+local Tab = Window:NewTab("Teleports")
+local Section = Tab:NewSection("Teleport Section")
+
+-- Create the teleport UI
+local PlayerList = Instance.new("ScreenGui", game.Players.LocalPlayer:WaitForChild("PlayerGui"))
+PlayerList.Name = "TeleportUI"
+
+local ScrollingFrame = Instance.new("ScrollingFrame", PlayerList)
+ScrollingFrame.Size = UDim2.new(0, 200, 0, 300)
+ScrollingFrame.Position = UDim2.new(1, -210, 0.5, -150)  -- Position at middle-right
+ScrollingFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+ScrollingFrame.BorderSizePixel = 2
+ScrollingFrame.ScrollBarThickness = 8
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+-- Add a UIListLayout to handle proper spacing
+local UIListLayout = Instance.new("UIListLayout", ScrollingFrame)
+UIListLayout.SortOrder = Enum.SortOrder.Name -- Sort items by name
+UIListLayout.Padding = UDim.new(0, 5) -- Padding between items
+
+-- Function to create teleport buttons
+local function createTeleportButton(name, targetCFrame)
+    local button = Instance.new("TextButton", ScrollingFrame)
+    button.Size = UDim2.new(1, 0, 0, 40)
+    button.Text = name
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.BackgroundTransparency = 0.3
+    button.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    button.Font = Enum.Font.SourceSans
+    button.TextScaled = true
+
+    -- Teleport action
+    button.MouseButton1Click:Connect(function()
+        game.Players.LocalPlayer.Character:SetPrimaryPartCFrame(targetCFrame)
+    end)
+end
+
+-- Add predefined teleport buttons
+createTeleportButton("Teleport to BANK", CFrame.new(-529.840149, 17.5899639, -303.625061))
+createTeleportButton("Teleport to Illegal Shop", CFrame.new(-142.381241, 4.57253838, 186.242584, -1, 0, 0, 0, 1, 0, 0, 0, -1))
+createTeleportButton("Teleport to Paki Shop", CFrame.new(-101.372818, 4.42014694, 47.9233665, 0.00340612093, 0.000122707948, 0.999994397, -0.000121861485, 1, -0.000122293568, -0.999994397, -0.000121444245, 0.00340612838))
+createTeleportButton("Teleport to Dominos", CFrame.new(149.960754, 4.54623413, 51.6483688, 1, 0, 0, 0, 1, 0, 0, 0, 1))
+createTeleportButton("Teleport to Box", CFrame.new(-125.536354, 2.50902843, 300.507019, 1, 0, 0, 0, 1, 0, 0, 0, 1))
+createTeleportButton("Teleport to Med Shop", CFrame.new(36.9738045, 4.80975246, -265.52121, 0.965931356, -0.0885077789, -0.243193239, -1.02743506e-05, 0.939688563, -0.34203124, 0.258798331, 0.330381215, 0.907673776))
+
+-- Function to update the teleport UI visibility
+local teleportUIVisible = false
+local function updateTeleportUIVisibility(state)
+    teleportUIVisible = state
+    PlayerList.Enabled = state  -- Toggle the entire PlayerList UI
+end
+
+-- Create the toggle to show/hide the teleport UI
+Section:NewToggle("Show Teleports", "Toggles the teleport list visibility", function(state)
+    updateTeleportUIVisibility(state)
+end)
+
+-- Initial Update
+updateTeleportUIVisibility(false)  -- Make it hidden by default
